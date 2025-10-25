@@ -1,0 +1,9 @@
+curl -X GET -v localhost:8080/subs
+
+curl -X POST localhost:8080/subs/add -d '{"service_name":"PLUS", "price": 1500, "user_id":"550e8400-e29b-41d4-a716-446655440000", "start_date":"2024-10-07", "end_date":"2025-10-07"}'
+
+curl -X PUT localhost:8080/subs/up/2 -d '{"service_name":"KINOPOISK", "price": 2500, "user_id":"550e8400-e29b-41d4-a716-446655440000", "start_date":"2024-10-07", "end_date":"2025-10-07"}'
+
+curl -X DELETE -v localhost:8080/subs/rm/1
+
+curl -X GET -v "localhost:8080/subs/sum?start="2024-10-07"&end="2025-10-07"" 
