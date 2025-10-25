@@ -42,7 +42,7 @@ func (s *Server) Run() error {
 	http.HandleFunc("/subs/add", s.CreateSub)
 	http.HandleFunc("/subs/rm/", s.RemoveSub)
 	http.HandleFunc("/subs/up/", s.UpdateSub)
-
+	http.HandleFunc("/subs/sum", s.GetSumSubs)
 
 	err := http.ListenAndServe(s.Addr, nil)	
 	if err == nil{

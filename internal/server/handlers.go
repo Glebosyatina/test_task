@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"net/http"
 	"encoding/json"
+
+	"github.com/google/uuid"
 )
 
 func (s *Server) Greet(w http.ResponseWriter, r *http.Request){
@@ -15,7 +17,12 @@ func (s *Server) Greet(w http.ResponseWriter, r *http.Request){
 
 //метод для получения информации обо всех подписках
 func (s *Server) GetAllSubscriptions(w http.ResponseWriter,  r *http.Request){
-	//слайс подписок в которых будем читать из базы
+	if r.Method != http.MethodGet{
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}	
+
+	//слайс подписок в который будем читать из базы
 	subs := make([]*Subscription, 0)
 	
 	rows, err := s.dbConn.Query("SELECT * FROM subscriptions")
@@ -72,6 +79,7 @@ func (s *Server) CreateSub(w http.ResponseWriter, r *http.Request){
 	fmt.Fprintf(w, "В базу добавлена %d подписка", subsAdded)
 }
 
+//метод удаления подписки
 func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
 	//проверка на метод запроса
 	if r.Method != http.MethodDelete{
@@ -95,6 +103,8 @@ func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
 	fmt.Fprintf(w, "Из базы удалена %d подписка", subsRemoved)
 }
 
+
+//метод обновления подписки
 func (s *Server) UpdateSub(w http.ResponseWriter, r *http.Request){
 	if r.Method != http.MethodPut{
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -128,6 +138,45 @@ func (s *Server) UpdateSub(w http.ResponseWriter, r *http.Request){
 	
 }
 
+//метод получения суммарной стоимости подписок за перид с группировкой по user_id и service_name
+func (s *Server) GetSumSubs(w http.ResponseWriter, r *http.Request){
+	// localhost:port/subs/sum?start&end
+	//вытаскиваем из url параметры start, end для выбранного периода вида "2025-10-24"	
+	start := r.URL.Query().Get("start")
+	end := r.URL.Query().Get("end")
+
+	
+	//делаем выборку по пользователю и названию подписки, с подсчетом общей стоимости подписок
+	rows, err := s.dbConn.Query("SELECT user_id, service_name, sum(price) FROM subscriptions WHERE start_date >= $1 AND end_date <= $2 GROUP BY user_id, service_name", start, end)
+	if err != nil{
+		http.Error(w, "ошибка выполнения запроса к бд", http.StatusInternalServerError)
+	}		
+	defer rows.Close()	
+
+	//структура результирующих сумм по сгруппированным и отфильтрованным подпискам
+	type RecordSum struct{
+		ServiceName string		`json:"service_name"`
+		UserId		uuid.UUID	`json:"user_id"`
+		Sum			uint		`json:"sum"`
+	}
+
+	sums := make([]*RecordSum, 0)	
+		
+	for rows.Next(){
+		s := new(RecordSum)
+
+		err := rows.Scan(&s.UserId, &s.ServiceName, &s.Sum)
+		if err != nil{
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		fmt.Println(*s)
+		sums = append(sums, s)	
+	}
+
+	//пишем слайс в тело ответа 
+	json.NewEncoder(w).Encode(sums)
+}
 
 
 
