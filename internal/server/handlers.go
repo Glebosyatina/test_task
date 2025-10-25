@@ -15,7 +15,7 @@ func (s *Server) Greet(w http.ResponseWriter, r *http.Request){
 
 //метод для получения информации обо всех подписках
 func (s *Server) GetAllSubscriptions(w http.ResponseWriter,  r *http.Request){
-
+	//слайс подписок в которых будем читать из базы
 	subs := make([]*Subscription, 0)
 	
 	rows, err := s.dbConn.Query("SELECT * FROM subscriptions")
@@ -23,7 +23,8 @@ func (s *Server) GetAllSubscriptions(w http.ResponseWriter,  r *http.Request){
 		panic(err)
 	}
 	defer rows.Close()
-
+	
+	//проходим по каждой записи и добавляем в слайс
 	for rows.Next(){
 		s := new(Subscription)
 		
@@ -35,7 +36,7 @@ func (s *Server) GetAllSubscriptions(w http.ResponseWriter,  r *http.Request){
 		subs = append(subs, s)
 	}
 	
-	
+	//пишем ответ в json формате
 	json.NewEncoder(w).Encode(subs)
 }
 
@@ -72,13 +73,14 @@ func (s *Server) CreateSub(w http.ResponseWriter, r *http.Request){
 }
 
 func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
+	//проверка на метод запроса
 	if r.Method != http.MethodDelete{
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}	
-	
+	//находим id в url	
 	id, _ := strconv.Atoi(path.Base(r.URL.Path))	
-
+	//удаляем запись из базы
 	result, err := s.dbConn.Exec("DELETE FROM subscriptions WHERE id=$1", id)
 	if err != nil{
 		http.Error(w, "Ошибка выполнения запроса к бд", http.StatusInternalServerError)
@@ -92,6 +94,40 @@ func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
 	
 	fmt.Fprintf(w, "Из базы удалена %d подписка", subsRemoved)
 }
+
+func (s *Server) UpdateSub(w http.ResponseWriter, r *http.Request){
+	if r.Method != http.MethodPut{
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id, _ := strconv.Atoi(path.Base(r.URL.Path))
+	
+	//парсим тело запроса в структуру
+	var sub Subscription
+	err := json.NewDecoder(r.Body).Decode(&sub)
+	if err != nil{
+		http.Error(w, "не удалось распарсить тело запроса", http.StatusBadRequest)
+		return
+	}
+	
+	//обновляем запись в бд
+	res, err := s.dbConn.Exec("UPDATE subscriptions SET service_name=$1, price=$2, user_id=$3, start_date=$4, end_date=$5 WHERE id=$6", sub.NameService, sub.Price, sub.UserId, sub.StartDate, sub.EndDate, id)
+	if err != nil{
+		http.Error(w, "ошибка выполнения запроса к бд", http.StatusInternalServerError)
+		return
+	}
+
+	subsUpdated, err := res.RowsAffected()
+	if err != nil{
+		http.Error(w, "Ошибка обновления записи в бд", http.StatusInternalServerError)
+		log.Fatal("Не удалось выполнить запрос к бд")
+	}
+
+	fmt.Fprintf(w, "В базе обновлена %d подписка", subsUpdated)
+	
+}
+
 
 
 
