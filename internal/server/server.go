@@ -66,13 +66,13 @@ func NewServer() (*Server, error){
 
 func (s *Server) Run() error {
 
-	http.HandleFunc("/", s.Greet)
 	http.HandleFunc("/subs", s.GetAllSubscriptions)
+	http.HandleFunc("/subs/", s.GetSub)
 	http.HandleFunc("/subs/add", s.CreateSub)
 	http.HandleFunc("/subs/rm/", s.RemoveSub)
 	http.HandleFunc("/subs/up/", s.UpdateSub)
 	http.HandleFunc("/subs/sum", s.GetSumSubs)
-	
+		
 
 	s.Logs.InfoLog.Println("Сервер запущен на", s.Addr, "порту")
 	err := http.ListenAndServe(s.Addr, nil)	

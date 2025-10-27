@@ -10,10 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Server) Greet(w http.ResponseWriter, r *http.Request){
-	fmt.Fprintf(w, "hello there\n")
-}
-
 //метод для получения информации обо всех подписках
 func (s *Server) GetAllSubscriptions(w http.ResponseWriter,  r *http.Request){
 	if r.Method != http.MethodGet{
@@ -82,12 +78,37 @@ func (s *Server) CreateSub(w http.ResponseWriter, r *http.Request){
 	fmt.Fprintf(w, "В базу добавлена %d подписка", subsAdded)
 }
 
+//метод получения информации об одной подписке по id
+func (s *Server) GetSub(w http.ResponseWriter, r *http.Request){
+	//проверка на метод запроса
+	if r.Method != http.MethodGet{
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		s.Logs.InfoLog.Println("Недопустимый метод запроса")
+		return
+	}	
+	//находим id в url	
+	id, _ := strconv.Atoi(path.Base(r.URL.Path))	
+	sub := new(Subscription)
+	//запрос к бд, парсим в структуру 
+	row := s.dbConn.QueryRow("SELECT * FROM subscriptions WHERE id=$1", id)
+	err := row.Scan(&sub.Id, &sub.NameService, &sub.Price, &sub.UserId, &sub.StartDate, &sub.EndDate)
+
+	if err != nil{
+		http.Error(w, "Не удалось получить информацию о подписке", http.StatusInternalServerError)
+		s.Logs.ErrorLog.Println("Не удалось выполнить запрос к бд")
+		return
+	}
+
+	json.NewEncoder(w).Encode(sub)	
+}
+
+
 //метод удаления подписки
 func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
 	//проверка на метод запроса
 	if r.Method != http.MethodDelete{
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		s.Logs.InfoLog.Println("Недопустимы метод запроса")
+		s.Logs.InfoLog.Println("Недопустимый метод запроса")
 		return
 	}	
 	//находим id в url	
@@ -113,7 +134,7 @@ func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
 //метод обновления подписки
 func (s *Server) UpdateSub(w http.ResponseWriter, r *http.Request){
 	if r.Method != http.MethodPut{
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Недопустимый метод запроса", http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -150,7 +171,7 @@ func (s *Server) UpdateSub(w http.ResponseWriter, r *http.Request){
 //метод получения суммарной стоимости подписок за перид с группировкой по user_id и service_name
 func (s *Server) GetSumSubs(w http.ResponseWriter, r *http.Request){
 	if r.Method != http.MethodGet{
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Недопустимый метод запроса", http.StatusMethodNotAllowed)
 		s.Logs.ErrorLog.Println("Неверный метод запроса для подсчета стоимостей подписок")
 		return
 	}
