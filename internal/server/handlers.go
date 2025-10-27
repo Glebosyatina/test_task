@@ -27,7 +27,7 @@ func (s *Server) GetAllSubscriptions(w http.ResponseWriter,  r *http.Request){
 	
 	rows, err := s.dbConn.Query("SELECT * FROM subscriptions")
 	if err != nil{
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, "Не удалось получить информацию о подписках", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось выполнить запрос к бд")
 		return
 	}
@@ -61,7 +61,7 @@ func (s *Server) CreateSub(w http.ResponseWriter, r *http.Request){
 	//парсим тело запроса в структуру	
 	err := json.NewDecoder(r.Body).Decode(&sub)
 	if err != nil{
-		http.Error(w, "Подписка не создалась", http.StatusInternalServerError)
+		http.Error(w, "Не удалось создать подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось распарсить тело запроса в подписку: ", err.Error())
 		return
 	}
@@ -69,13 +69,13 @@ func (s *Server) CreateSub(w http.ResponseWriter, r *http.Request){
 	//вставляем запись в бд
 	result, err := s.dbConn.Exec("INSERT INTO subscriptions (service_name, price, user_id, start_date, end_date) VALUES ($1, $2, $3, $4, $5)", sub.NameService, sub.Price, sub.UserId, sub.StartDate, sub.EndDate)
 	if err != nil{
-		http.Error(w, "Ошибка выполнения запроса к бд", http.StatusInternalServerError)
+		http.Error(w, "Не удалось создать подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось выполнить запрос по вставке записи в бд")
 	}
 
 	subsAdded, err := result.RowsAffected()
 	if err != nil{
-		http.Error(w, "Ошибка получения количества вставленных записей в бд", http.StatusInternalServerError)
+		http.Error(w, "Не удалось создать подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось выполнить запрос к бд")
 		return
 	}
@@ -95,13 +95,13 @@ func (s *Server) RemoveSub(w http.ResponseWriter, r *http.Request){
 	//удаляем запись из базы
 	result, err := s.dbConn.Exec("DELETE FROM subscriptions WHERE id=$1", id)
 	if err != nil{
-		http.Error(w, "Ошибка выполнения запроса к бд", http.StatusInternalServerError)
+		http.Error(w, "Не удалось удалить подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось выполнить запрос к бд")
 		return
 	}
 	subsRemoved, err := result.RowsAffected()
 	if err != nil {
-		http.Error(w, "Ошибка получения количества удаленных записей", http.StatusInternalServerError)
+		http.Error(w, "Не удалось удалить подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось выполнить запрос к бд")
 		return
 	}
@@ -131,14 +131,14 @@ func (s *Server) UpdateSub(w http.ResponseWriter, r *http.Request){
 	//обновляем запись в бд
 	res, err := s.dbConn.Exec("UPDATE subscriptions SET service_name=$1, price=$2, user_id=$3, start_date=$4, end_date=$5 WHERE id=$6", sub.NameService, sub.Price, sub.UserId, sub.StartDate, sub.EndDate, id)
 	if err != nil{
-		http.Error(w, "ошибка выполнения запроса к бд", http.StatusInternalServerError)
+		http.Error(w, "Не удалось обновить подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Ошибка выполнения запроса к бд")
 		return
 	}
 
 	subsUpdated, err := res.RowsAffected()
 	if err != nil{
-		http.Error(w, "Ошибка обновления записи в бд", http.StatusInternalServerError)
+		http.Error(w, "Не удалось обновить подписку", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось получить кол-во обнвленных записей в бд")
 		return
 	}
@@ -163,7 +163,7 @@ func (s *Server) GetSumSubs(w http.ResponseWriter, r *http.Request){
 	//делаем выборку по пользователю и названию подписки, с подсчетом общей стоимости подписок
 	rows, err := s.dbConn.Query("SELECT user_id, service_name, sum(price) FROM subscriptions WHERE start_date >= $1 AND end_date <= $2 GROUP BY user_id, service_name", start, end)
 	if err != nil{
-		http.Error(w, "ошибка выполнения запроса к бд", http.StatusInternalServerError)
+		http.Error(w, "Не удалось получить информацию", http.StatusInternalServerError)
 		s.Logs.ErrorLog.Println("Не удалось выполнить запрос к бд")
 		return
 	}		
@@ -183,7 +183,7 @@ func (s *Server) GetSumSubs(w http.ResponseWriter, r *http.Request){
 
 		err := rows.Scan(&sum.UserId, &sum.ServiceName, &sum.Sum)
 		if err != nil{
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			http.Error(w, "Не удалось получить информацию", http.StatusInternalServerError)
 			s.Logs.ErrorLog.Println("Не удалось распарсить записи из бд")
 			return
 		}
