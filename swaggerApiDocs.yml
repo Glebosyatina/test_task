@@ -29,6 +29,37 @@ paths:
               schema:
                 type: string
                 example: "Не удалось получить информацию о подписках"
+  
+  /subs/{sub_id}:
+    put:
+      summary: Получение информации о подписке 
+      tags:
+        - Subscriptions
+      operationId: getSubById
+      parameters:
+        - name: sub_id
+          in: path
+          required: true
+          description: id подписки
+          schema:
+            type: integer
+          example: 1231
+           
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+        'default':
+          description: что то непонятное
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "Не удалось получить информацию о подписке"
+  
                 
   /subs/sum{start}{end}:
     get:
@@ -71,7 +102,7 @@ paths:
       summary: Создание подписки
       tags:
         - Subscriptions
-      operationId: createAuto
+      operationId: createSub
       requestBody:
         required: true
         content:
@@ -100,7 +131,7 @@ paths:
       summary: Обновление подписки 
       tags:
         - Subscriptions
-      operationId: getAutoById
+      operationId: updateSubById
       parameters:
         - name: sub_id
           in: path
@@ -132,7 +163,7 @@ paths:
       summary: Удаление подписки
       tags:
         - Subscriptions
-      operationId: deleteAuto
+      operationId: deleteSub
       parameters:
         - name: sub_id
           in: path
