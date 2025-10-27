@@ -26,9 +26,8 @@ func NewServer() (*Server, error){
 
 	//парсим конфиг
 	conf := config.ReadConfig()
-
 	//заполняем структуру сервер
-	connInfo := fmt.Sprintf("user=%s dbname=%s sslmode=disable password=%s", conf.DbConf.DbUser, conf.DbConf.DbName, conf.DbConf.DbPassword)
+	connInfo := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s", conf.DbConf.Host, conf.DbConf.DbUser, conf.DbConf.DbName, conf.DbConf.DbPassword)
 	conn, err := sqlx.Open("postgres", connInfo)
 	if err != nil{
 		return nil, errors.New("Не удалось открыть соединение с бд")

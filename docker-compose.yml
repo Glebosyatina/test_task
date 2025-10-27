@@ -1,0 +1,51 @@
+version: '3'
+services:
+  go-app-subs:
+    restart: on-failure
+    build:
+      context: .
+    image: go-app-subs:1.0
+    container_name: go-app-subs
+    hostname: go-app
+    ports:
+      - 8080:8080
+    links:
+      - local-postgres
+    networks:
+      appnet:
+        ipv4_address: 172.16.0.2
+
+
+  local-postgres:
+    image: postgres:15.0
+    container_name: local-postgres
+    hostname: local-postgres
+    volumes:
+      - test-pg:/var/lib/postgresql/data
+    ports: 
+      - 5432:5432
+    environment:
+      POSTGRES_DB: testdb
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testuser
+      PGDATA: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      appnet:
+        ipv4_address: 172.16.0.3
+volumes:
+  test-pg:
+    external: true
+networks:
+  appnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: "172.16.0.0/28"
+

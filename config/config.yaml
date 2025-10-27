@@ -3,7 +3,7 @@ server:
   host: "127.0.0.1"
   addr: ":8080"
 db:
-  host: "127.0.0.1"
+  host: "172.16.0.3"
   dbuser: "testuser"
   dbname: "testdb"
   dbpassword: "testuser"
