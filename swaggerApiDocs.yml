@@ -1,0 +1,220 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Subscription service
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:8080
+    description: subscriptions app server
+  
+paths:
+  /subs:
+    get:
+      summary: Получение информации обо всех подписках
+      tags:
+        - Subscriptions
+      operationId: getAllSubs
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscriptions"
+        'default':
+          description: что то непонятное
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "Не удалось получить информацию о подписках"
+                
+  /subs/sum{start}{end}:
+    get:
+      parameters:
+        - name: start
+          in: path
+          schema:
+            type: string
+          required: true
+          description: дата начала для фильтрации
+          example: "2024-07-10"
+        - name: end
+          in: path
+          schema:
+            type: string
+          required: true
+          description: дата окончания для фильтрации
+          example: "2025-07-10"
+        
+      summary: Получение суммарной стоимости подписок сгруппированных по пользователям и по названию
+      tags:
+        - Subscriptions
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionsSums"
+        'default':
+          description: что то непонятное
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "Не удалось получить информацию"
+                
+  /subs/add:
+    post:
+      summary: Создание подписки
+      tags:
+        - Subscriptions
+      operationId: createAuto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Subscription"
+      responses:
+        '200':
+          description: Успешный ответ для созданной подписки
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "В базу добавлена 1 подписка"
+               
+        'default':
+          description: что то непонятное
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "Не удалось создать подписку"
+
+  /subs/up/{sub_id}:
+    put:
+      summary: Обновление подписки 
+      tags:
+        - Subscriptions
+      operationId: getAutoById
+      parameters:
+        - name: sub_id
+          in: path
+          required: true
+          description: id подписки
+          schema:
+            type: string
+          example: 1231
+           
+        
+      responses:
+        '200':
+          description: Успешный ответ, подписка обновлена
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "В базе обновлена 1 подписка"
+        'default':
+          description: что то непонятное
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "Не удалось обновить подписку"
+                
+  /subs/rm/{sub_id}:
+    delete:
+      summary: Удаление подписки
+      tags:
+        - Subscriptions
+      operationId: deleteAuto
+      parameters:
+        - name: sub_id
+          in: path
+          required: true
+          description: id подписки
+          schema:
+            type: string
+          example: 1231
+      responses:
+        '200':
+          description: Успешное удаление
+          content:
+            application/json: {}
+              
+        'default':
+          description: что то непонятное
+          content:
+            application/text:
+              schema:
+                type: string
+                example: "Не удалось удалить подписку"
+                
+components:
+  schemas:
+    Subscription:
+      type: object
+      required:
+        - service_name
+        - price
+        - user_id
+        - start_date
+        - end_date
+      properties:
+        service_name:
+          type: string
+          example: "Kinopoisk"
+        price:
+          type: integer
+          example: 1500
+        user_id:
+          type: string
+          format: uuid
+          description: uuid пользователя
+          example: 550e8400-e29b-41d4-a716-446655440000
+
+        start_date:
+          type: string
+          format: "year-mm-dd"
+          description: дата начала подписки 
+          example: "2025-10-27"
+        end_date:
+          type: string
+          format: "year-mm-dd"
+          description: дата окнчания подписки 
+          example: "2025-10-27"
+
+          
+    Subscriptions:
+      type: array
+      items:
+        $ref: "#/components/schemas/Subscription"
+        
+    SubscriptionsSum:
+      type: object
+      required:
+        - service_name
+        - user_id
+        - sum
+      properties:
+        service_name:
+          type: string
+          example: "Kinopoisk"
+        user_id:
+          type: string
+          format: uuid
+          description: uuid пользователя
+          example: 550e8400-e29b-41d4-a716-446655440000
+        sum:
+          type: integer
+          example: 2500
+    SubscriptionsSums:
+      type: array
+      items:
+        $ref: "#/components/schemas/SubscriptionsSum"
+          
